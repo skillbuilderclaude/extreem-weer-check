@@ -26,8 +26,8 @@
   .brand span{font-size:.72rem;color:var(--dim);text-transform:uppercase;letter-spacing:.12em;margin-top:3px}
   .infobtn{width:38px;height:38px;border-radius:50%;border:2px solid var(--navy);background:#fff;color:var(--navy);font-weight:800;font-size:1rem;cursor:pointer}
   .logo{height:34px;width:auto;display:block}
-  .apptitle{margin:14px 0 0;padding:14px 18px 14px 20px;background:var(--sky);border-radius:0 0 26px 0;margin-left:-18px;margin-right:-18px;position:relative}
-  .apptitle::before{content:"";position:absolute;left:18px;top:-7px;width:22px;height:14px;border-top:4px solid var(--red);border-left:4px solid var(--red);border-radius:8px 0 0 0}
+  .apptitle{margin:16px 0 0;padding:20px 18px 14px 32px;background:var(--sky);border-radius:0 0 26px 0;margin-left:-18px;margin-right:-18px;position:relative}
+  .apptitle::before{content:"";position:absolute;left:12px;top:10px;width:16px;height:16px;border-top:4px solid var(--red);border-left:4px solid var(--red);border-radius:8px 0 0 0}
   .apptitle b{display:block;font-size:1.45rem;font-weight:800;color:var(--navy);line-height:1.1}
   .apptitle span{display:block;font-size:.86rem;color:var(--navy);margin-top:3px}
   .hazard{height:5px;margin:0 -18px;background:var(--red)}
@@ -785,6 +785,7 @@
     renderStatus();
   }
 
+  var MAX_STATION_KM = 60;
   function fetchBuienradar(lat, lon){
     return fetch("https://data.buienradar.nl/2.0/feed/json", { cache:"no-store" })
       .then(function(r){ return r.json(); })
@@ -802,6 +803,7 @@
           if(d<bd){ bd=d; best={ t:tp, f:(fl!=null?fl:tp), name:String(pick(s,"stationname","Stationname")||s.regio||"meetstation").replace(/^Meetstation\s*/i,"") }; }
         });
         if(!best) throw new Error("geen station");
+        if(bd > MAX_STATION_KM) throw new Error("te ver"); // buiten Nederland: geen KNMI-station in de buurt, dan Open-Meteo
         return { temp:best.t, feel:best.f, label:"KNMI "+best.name, source:"Buienradar · KNMI-stations" };
       });
   }
