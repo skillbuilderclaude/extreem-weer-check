@@ -1,0 +1,1232 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>Extreem weer check · Hanab</title>
+<style>
+  :root{
+    --bg:#ffffff; --surface:#f0faff; --surface-2:#ffffff; --line:#bee1fa;
+    --text:#00416e; --dim:#4f7391;
+    --ok:#6f8ea6; --green:#64b42d; --yellow:#f5be00; --orange:#f08c1e; --red:#e63223;
+    --hivis:#e63223; --ice:#00416e; --navy:#00416e; --sky:#bee1fa;
+    --radius:6px 6px 26px 6px; --tap:60px;
+    font-family:Arial,Helvetica,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text)}
+  body{min-height:100dvh;display:flex;justify-content:center}
+  .app{width:100%;max-width:480px;background:var(--bg);min-height:100dvh;display:flex;flex-direction:column;position:relative;overflow:hidden}
+
+  header{padding:14px 18px 0;flex:0 0 auto;background:#fff}
+  .brandrow{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .brand{display:flex;flex-direction:column;line-height:1.05}
+  .brand b{font-size:1.18rem;font-weight:800;letter-spacing:.01em}
+  .brand span{font-size:.72rem;color:var(--dim);text-transform:uppercase;letter-spacing:.12em;margin-top:3px}
+  .infobtn{width:38px;height:38px;border-radius:50%;border:2px solid var(--navy);background:#fff;color:var(--navy);font-weight:800;font-size:1rem;cursor:pointer}
+  .logo{height:34px;width:auto;display:block}
+  .apptitle{margin:14px 0 0;padding:14px 18px 14px 20px;background:var(--sky);border-radius:0 0 26px 0;margin-left:-18px;margin-right:-18px;position:relative}
+  .apptitle::before{content:"";position:absolute;left:18px;top:-7px;width:22px;height:14px;border-top:4px solid var(--red);border-left:4px solid var(--red);border-radius:8px 0 0 0}
+  .apptitle b{display:block;font-size:1.45rem;font-weight:800;color:var(--navy);line-height:1.1}
+  .apptitle span{display:block;font-size:.86rem;color:var(--navy);margin-top:3px}
+  .hazard{height:5px;margin:0 -18px;background:var(--red)}
+  .hazard.kou{background:var(--navy)}
+
+  main{flex:1 1 auto;overflow-y:auto;padding:16px 16px 96px;-webkit-overflow-scrolling:touch}
+  .view{display:none;animation:fade .25s ease}
+  .view.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .label{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--navy);font-weight:700}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+
+  .wx-status{font-size:.95rem;color:var(--dim);font-weight:600;display:flex;align-items:center;gap:8px}
+  .wx-status .pulse{width:9px;height:9px;border-radius:50%;background:var(--hivis);animation:pulse 1.1s ease infinite;flex:0 0 auto}
+  @keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+  .wx-main{margin-top:8px;display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
+  .wx-temp{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:3rem;font-weight:700;line-height:.95}
+  .wx-temp small{font-size:1.2rem;color:var(--dim);font-weight:600}
+  .wx-feel{font-size:1.05rem;color:var(--text);padding-bottom:6px}
+  .wx-feel b{font-size:1.5rem;font-weight:800}
+  .wx-meta{font-size:.78rem;color:var(--dim);margin-top:8px;width:100%}
+  .wx-search{display:flex;gap:8px;margin-top:14px}
+  .wx-search input{flex:1;min-width:0;min-height:46px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);padding:0 12px;font-size:1rem}
+  .wx-search input::placeholder{color:#7f9bb3}
+  .wx-sug{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .sug{border:1px solid var(--line);background:var(--surface-2);color:var(--text);border-radius:999px;padding:8px 12px;font-size:.86rem;font-weight:600;cursor:pointer}
+  .sug:active{filter:brightness(.94)}
+  .wx-actions{display:flex;gap:8px;margin-top:10px}
+  .btn-mini{flex:1;min-height:46px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-weight:700;font-size:.92rem;cursor:pointer}
+  .btn-mini.ghost{background:transparent}
+  .btn-mini:active{filter:brightness(.94)}
+
+  .stepper{display:flex;align-items:center;justify-content:space-between;margin-top:12px;gap:12px}
+  .step{width:var(--tap);height:var(--tap);border-radius:14px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:2rem;font-weight:700;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center}
+  .step:active{background:#dceefb}
+  .readout{flex:1 1 auto;text-align:center;font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:2.6rem;font-weight:700;letter-spacing:-.02em}
+  .readout small{font-size:1.1rem;color:var(--dim);font-weight:600}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;margin-top:6px;gap:10px}
+  .switch{position:relative;width:52px;height:30px;flex:0 0 auto}
+  .switch input{opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+  .slider{position:absolute;inset:0;background:#a9bfd1;border-radius:30px;transition:.2s;pointer-events:none}
+  .slider::before{content:"";position:absolute;width:24px;height:24px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+  .switch input:checked + .slider{background:var(--green)}
+  .switch input:checked + .slider::before{transform:translateX(22px)}
+
+  .phase{border-radius:var(--radius);padding:22px 18px;margin-bottom:14px;color:#fff}
+  .phase.dark{color:#00416e}
+  .phase .ptag{font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;opacity:.85;font-weight:700}
+  .phase .pname{font-size:clamp(2rem,9vw,2.7rem);font-weight:900;letter-spacing:-.01em;margin:2px 0 6px;line-height:1}
+  .phase .pmsg{font-size:1.05rem;font-weight:600;line-height:1.35}
+  .phase .pmeta{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+  .pchip{background:rgba(255,255,255,.22);border-radius:10px;padding:8px 11px;font-size:.85rem;font-weight:600}
+  .phase.dark .pchip{background:rgba(255,255,255,.45)}
+  .src{font-size:.78rem;color:var(--dim);margin:-4px 2px 14px}
+
+  ul.measures{list-style:none;margin:6px 0 0;padding:0}
+  ul.measures li{position:relative;padding:8px 0 8px 26px;border-top:1px solid var(--line);font-size:.96rem;line-height:1.4}
+  ul.measures li:first-child{border-top:none}
+  ul.measures li::before{content:"";position:absolute;left:4px;top:15px;width:9px;height:9px;border-radius:2px;background:var(--accent,#6f8ea6)}
+
+  .fc-sum{font-size:.92rem;color:var(--text);line-height:1.4;margin:8px 0 6px}
+  .fc-strip{display:flex;gap:6px;overflow-x:auto;padding:6px 2px 2px;-webkit-overflow-scrolling:touch}
+  .fc-col{flex:0 0 auto;width:40px;display:flex;flex-direction:column;align-items:center;gap:5px}
+  .fc-col.now .fc-hr{color:var(--hivis)}
+  .fc-temp{font-size:.78rem;font-weight:700;color:var(--text)}
+  .fc-barwrap{height:104px;display:flex;align-items:flex-end}
+  .fc-bar{width:24px;border-radius:6px 6px 3px 3px;min-height:12px}
+  .fc-hr{font-size:.74rem;color:var(--dim);font-weight:600}
+  .fc-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+  .fc-legend span{display:flex;align-items:center;gap:5px;font-size:.74rem;color:var(--dim)}
+  .fc-legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:var(--tap);border-radius:6px 6px 20px 6px;border:none;font-size:1rem;font-weight:800;cursor:pointer;margin-top:10px;padding:0 14px}
+  .btn-primary{background:var(--navy);color:#fff}
+  .btn-ghost{background:#fff;color:var(--navy);border:2px solid var(--navy)}
+  .btn:active{filter:brightness(.94)}
+
+  .warn{border-radius:6px 6px 22px 6px;padding:14px 16px;margin-bottom:14px;border:2px solid var(--navy);background:#fff;display:none}
+  .warn.open{display:block}
+  .warn .wtop{font-weight:800;font-size:1.02rem;display:flex;align-items:center;gap:8px}
+  .warn .wdot{width:16px;height:16px;border-radius:4px;flex:0 0 auto}
+  .warn p{margin:6px 0 0;font-size:.9rem;line-height:1.4}
+  .warn .wsrc{font-size:.76rem;color:var(--dim);margin-top:6px}
+  .wman{margin-bottom:14px}
+  .wman .seg{margin-top:8px}
+  .wman .seg button{min-height:42px;font-size:.86rem}
+  .wman a{color:var(--navy);font-weight:700}
+  #wbgtPanel{display:none}
+  #wbgtPanel.open{display:block}
+  .seg{display:flex;gap:8px;margin-top:12px}
+  .seg button{flex:1;min-height:48px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--dim);font-weight:700;cursor:pointer}
+  .seg button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .wbgt-out{margin-top:14px;border-radius:12px;padding:14px;font-weight:700;text-align:center}
+
+  .timer-wrap{text-align:center}
+  .timer-state{font-size:.8rem;letter-spacing:.18em;text-transform:uppercase;font-weight:800;color:var(--dim)}
+  .timer-big{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:clamp(4rem,26vw,6.5rem);font-weight:700;line-height:1;letter-spacing:-.03em;margin:4px 0 2px}
+  .ring{border-radius:24px;padding:26px 18px;margin:6px 0 14px;border:1px solid var(--line);background:var(--surface);transition:background .3s}
+  .ring.work{background:#eef7e6;border-color:#64b42d}
+  .ring.rest{background:#fff0d7;border-color:#f5be00}
+  .ring.flash{animation:flash .6s ease}
+  @keyframes flash{0%,100%{filter:none}30%{filter:brightness(1.8)}}
+  .presets{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:4px}
+  .preset{min-height:52px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-weight:700;cursor:pointer;font-size:.92rem}
+  .preset.on{outline:2px solid var(--hivis);outline-offset:-2px}
+  .timer-controls{display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-top:12px}
+  .counter{font-size:.9rem;color:var(--dim);margin-top:12px;text-align:center}
+  .counter b{color:var(--text)}
+
+  .sos{display:flex;align-items:center;justify-content:center;gap:10px;background:var(--red);color:#fff;min-height:66px;border-radius:6px 6px 22px 6px;font-size:1.4rem;font-weight:900;text-decoration:none;letter-spacing:.02em;margin-bottom:6px}
+  .sos:active{filter:brightness(.92)}
+  .sosnote{font-size:.84rem;color:var(--dim);margin:0 0 14px;text-align:center}
+  .aid{border-radius:6px 6px 22px 6px;border:1px solid var(--line);background:var(--surface);margin-bottom:12px;overflow:hidden}
+  .aid .top{padding:12px 14px;font-weight:800;color:#00416e}
+  .aid .body{padding:12px 14px}
+  .aid .body .h{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);font-weight:700;margin-bottom:3px}
+  .aid .body p{margin:0 0 10px;line-height:1.4;font-size:.96rem}
+  .aid .body p:last-child{margin-bottom:0}
+  .subhead{font-size:1.05rem;color:var(--navy);font-weight:800;margin:18px 2px 8px}
+
+  .urine{border-radius:14px;overflow:hidden;border:1px solid var(--line);margin-top:8px}
+  .urow{display:flex;align-items:stretch}
+  .uswatch{width:60px;flex:0 0 auto}
+  .utext{padding:11px 13px;font-size:.92rem;line-height:1.35;display:flex;align-items:center;background:#fff;flex:1}
+  .urow + .urow .utext{border-top:1px solid var(--line)}
+  p.lead{font-size:1rem;line-height:1.5;color:var(--text);margin:0 0 12px}
+  .muted{color:var(--dim);font-size:.86rem;line-height:1.45}
+
+  nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;pointer-events:none}
+  .tabbar{width:100%;max-width:480px;display:grid;grid-template-columns:repeat(5,1fr);background:rgba(255,255,255,.97);backdrop-filter:blur(10px);border-top:1px solid var(--line);pointer-events:auto;padding-bottom:env(safe-area-inset-bottom)}
+  .tab{display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 2px 12px;background:none;border:none;color:var(--dim);cursor:pointer;font-size:.66rem;font-weight:700;letter-spacing:.01em}
+  .tab svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .tab.on{color:var(--navy)}
+  .tab.on svg{stroke:var(--hivis)}
+
+  .modal{position:fixed;inset:0;background:rgba(0,65,110,.45);display:none;align-items:flex-end;justify-content:center;z-index:50}
+  .modal.open{display:flex}
+  .sheet{width:100%;max-width:480px;background:#fff;border-radius:20px 20px 0 0;border:1px solid var(--line);max-height:86dvh;overflow-y:auto;padding:18px 18px calc(24px + env(safe-area-inset-bottom))}
+  .sheet h2{margin:2px 0 10px;font-size:1.2rem}
+  .sheet h3{margin:16px 0 6px;font-size:.95rem}
+  .sheet p{margin:0 0 10px;line-height:1.5;font-size:.92rem;color:var(--text)}
+  .sheet .close{position:sticky;top:0;float:right;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:1.1rem;font-weight:800;cursor:pointer}
+  .legend{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:.9rem}
+  .dot{width:14px;height:14px;border-radius:4px;flex:0 0 auto}
+
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+  :focus-visible{outline:3px solid var(--hivis);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brandrow">
+      <img class="logo" alt="Hanab Pipelines &amp; Utilities" src="data:image/jpeg;base64,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">
+      <button class="infobtn" id="infoBtn" aria-label="Uitleg en disclaimer">i</button>
+    </div>
+    <div class="apptitle"><b id="appTitle">Extreem weer check</b><span id="appSub">Hitte en kou op het werk</span></div>
+    <div class="hazard" id="hazard" aria-hidden="true"></div>
+  </header>
+
+  <main>
+    <!-- STATUS -->
+    <section class="view active" id="view-status">
+      <div class="card" id="heavyCard">
+        <div class="toggle-row" style="margin-top:0">
+          <div><div class="label" style="font-size:.98rem;color:var(--hivis);font-weight:800;letter-spacing:.04em">Zwaar werk</div><div class="muted" style="margin-top:3px">Werken in putten, sleuven, tenten en nabij hete delen. Sjouwen, scheppen, klimmen en het dragen van zware PBM.</div></div>
+          <label class="switch"><input type="checkbox" id="heavySwitch" checked><span class="slider"></span></label>
+        </div>
+        <div class="muted" id="heavyHint" style="margin-top:8px">Staat aan: de app rekent met zwaar werk. De hittefasen tellen zwaarder en slaan eerder om naar geel, oranje en rood.</div>
+      </div>
+      <div class="card" id="wxCard">
+        <div class="wx-status" id="wxStatus"><span class="pulse"></span>Weer laden…</div>
+        <div class="wx-main" id="wxMain" style="display:none">
+          <div class="wx-temp"><span id="wxTemp">–</span><small>°C</small></div>
+          <div class="wx-feel">voelt als <b id="wxFeel">–</b>°C</div>
+          <div class="wx-meta" id="wxMeta"></div>
+        </div>
+        <div class="wx-search">
+          <input id="placeInput" type="text" inputmode="text" autocomplete="off" placeholder="Plaats, bv. Papendrecht (of een temperatuur)">
+          <button class="btn-mini" id="placeGo" style="flex:0 0 auto;padding:0 16px">Zoek</button>
+        </div>
+        <div class="wx-sug" id="placeSug" style="display:none"></div>
+        <div class="wx-actions">
+          <button class="btn-mini" id="useGeoBtn">Mijn locatie</button>
+          <button class="btn-mini ghost" id="toManual">Handmatig</button>
+        </div>
+      </div>
+
+      <div class="card" id="manualCard" style="display:none">
+        <div class="seg" style="margin-top:0">
+          <button id="segHitte" class="on">Hitte</button>
+          <button id="segKou">Kou</button>
+        </div>
+        <div class="label" id="tLabel" style="margin-top:14px">Temperatuur in de schaduw</div>
+        <div class="stepper">
+          <button class="step" id="tMinus" aria-label="Lager">–</button>
+          <div class="readout"><span id="tVal">30</span><small>°C</small></div>
+          <button class="step" id="tPlus" aria-label="Hoger">+</button>
+        </div>
+        <div id="hkBlock">
+          <div class="toggle-row" style="margin-top:16px">
+            <div class="label">KNMI-hittekracht meenemen</div>
+            <label class="switch"><input type="checkbox" id="hkToggle"><span class="slider"></span></label>
+          </div>
+          <div class="stepper" id="hkStepper" style="opacity:.4;pointer-events:none">
+            <button class="step" id="hMinus" aria-label="Lager">–</button>
+            <div class="readout"><span id="hVal">7</span><small>/ 10</small></div>
+            <button class="step" id="hPlus" aria-label="Hoger">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="warn" id="warnCard">
+        <div class="wtop"><span class="wdot" id="warnDot"></span><span id="warnTitle">KNMI-waarschuwing</span></div>
+        <p id="warnText"></p>
+        <div class="wsrc" id="warnSrc"></div>
+      </div>
+      <div class="muted" id="warnOk" style="display:none;margin:-6px 2px 12px"></div>
+      <div class="card wman" id="warnManual" style="display:none">
+        <div class="label">KNMI-waarschuwing voor deze locatie</div>
+        <div class="muted" style="margin-top:6px">De app kan de waarschuwingen hier niet automatisch ophalen. Kijk op <a href="https://www.knmi.nl/nederland-nu/weer/waarschuwingen" target="_blank" rel="noopener">knmi.nl/waarschuwingen</a> en kies de code.</div>
+        <div class="seg" id="wmLevel">
+          <button data-l="0" class="on">Geen</button><button data-l="1">Geel</button><button data-l="2">Oranje</button><button data-l="3">Rood</button>
+        </div>
+        <div class="seg" id="wmType" style="display:none">
+          <button data-t="kou" class="on">Gladheid, sneeuw of kou</button><button data-t="hitte">Hitte</button><button data-t="anders">Anders</button>
+        </div>
+      </div>
+
+      <div class="phase" id="phaseBanner">
+        <div class="ptag" id="pTag">Status</div>
+        <div class="pname" id="pName">—</div>
+        <div class="pmsg" id="pMsg">—</div>
+        <div class="pmeta">
+          <span class="pchip" id="pWork">—</span>
+          <span class="pchip" id="pDrink">—</span>
+        </div>
+      </div>
+      <div class="src" id="pSrc"></div>
+
+      <div class="card">
+        <div class="label">Wat te doen</div>
+        <ul class="measures" id="measures"></ul>
+      </div>
+
+      <button class="btn btn-primary" id="startTimerBtn">Werk-rust timer starten</button>
+      <button class="btn btn-ghost" id="wbgtToggle">Zwaar werk? Bepaal via WBGT</button>
+
+      <div class="card" id="wbgtPanel" style="margin-top:14px">
+        <div class="label">WBGT op de werkplek</div>
+        <div class="muted" style="margin-top:6px">Voor sleuven, besloten ruimten of zwaar werk naast hete leidingen, gemeten met een WBGT-meter.</div>
+        <div class="stepper">
+          <button class="step" id="wMinus" aria-label="Lager">–</button>
+          <div class="readout"><span id="wVal">26</span><small>°C</small></div>
+          <button class="step" id="wPlus" aria-label="Hoger">+</button>
+        </div>
+        <div class="seg">
+          <button id="segMatig" class="on">Matig werk</button>
+          <button id="segZwaar">Zwaar / zeer zwaar</button>
+        </div>
+        <div class="wbgt-out" id="wbgtOut"></div>
+        <div class="muted" style="margin-top:10px">Niet-geacclimatiseerd: 2 tot 3 °C lager aanhouden. Bij warmte­vasthoudende PBM de WBGT laten corrigeren door de arbeidshygiënist.</div>
+      </div>
+    </section>
+
+    <!-- VOORUIT -->
+    <section class="view" id="view-vooruit">
+      <div class="card">
+        <div class="label">Rest van vandaag</div>
+        <div class="fc-sum" id="todaySum">Verloop laden…</div>
+        <div class="fc-strip" id="todayStrip"></div>
+        <div class="fc-legend">
+          <span><i style="background:var(--green)"></i>Groen</span>
+          <span><i style="background:var(--yellow)"></i>Geel</span>
+          <span><i style="background:var(--orange)"></i>Oranje</span>
+          <span><i style="background:var(--red)"></i>Rood</span>
+        </div>
+        <div class="muted" style="margin-top:8px">De kleur geldt voor hitte of voor kou, afhankelijk van de gevoelstemperatuur in dat uur.</div>
+      </div>
+
+      <div class="label" style="margin:4px 2px 8px">Vooruitblik morgen</div>
+      <div class="phase" id="tmrBanner" style="margin-bottom:12px">
+        <div class="ptag" id="tmrTag">Morgen</div>
+        <div class="pname" id="tmrName">—</div>
+        <div class="pmsg" id="tmrMsg">—</div>
+        <div class="pmeta">
+          <span class="pchip" id="tmrMax">—</span>
+          <span class="pchip" id="tmrMin">—</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="label">Uurverloop morgen</div>
+        <div class="fc-strip" id="tmrStrip" style="margin-top:8px"></div>
+      </div>
+      <div class="muted" style="margin:-2px 2px 0">Verwachting (kan nog wijzigen). De uitvoerder bepaalt elke ochtend de fase per locatie.</div>
+    </section>
+
+    <!-- TIMER -->
+    <section class="view" id="view-timer">
+      <div class="timer-wrap">
+        <div class="ring" id="timerRing">
+          <div class="timer-state" id="timerState">Klaar</div>
+          <div class="timer-big" id="timerBig">45:00</div>
+          <div class="muted" id="timerSub">Werkblok</div>
+        </div>
+        <div class="label" style="text-align:left">Ritme kiezen</div>
+        <div class="presets" id="presets"></div>
+        <div class="timer-controls">
+          <button class="btn btn-primary" id="startBtn" style="margin-top:0">Start</button>
+          <button class="btn btn-ghost" id="resetBtn" style="margin-top:0">Reset</button>
+        </div>
+        <div class="counter">Pauzes deze sessie: <b id="roundCount">0</b> · <span id="counterTip">drink elke pauze water</span></div>
+      </div>
+    </section>
+
+    <!-- EHBO -->
+    <section class="view" id="view-ehbo">
+      <a class="sos" href="tel:112">⚠ Bel 112</a>
+      <p class="sosnote">Geef meteen het adres of de locatie van de werkplek door.</p>
+
+      <div id="ehboKou">
+        <div class="subhead">Kou</div>
+        <div class="aid">
+          <div class="top" style="background:var(--yellow)">Lichte onderkoeling</div>
+          <div class="body">
+            <div class="h">Signalen</div><p>Rillen, bleke en koude huid, onhandig, traag praten.</p>
+            <div class="h">Doen</div><p>Uit wind en nattigheid. Natte kleding uit, droog en warm inpakken. Niet alleen laten. Geen verbetering? Huisarts.</p>
+          </div>
+        </div>
+        <div class="aid">
+          <div class="top" style="background:var(--red);color:#fff">Ernstige onderkoeling, levensgevaarlijk</div>
+          <div class="body">
+            <div class="h">Signalen</div><p>Het rillen stopt, sloom, verward, bewustzijn daalt.</p>
+            <div class="h">Doen</div><p><b>Direct 112 en de BHV.</b> Voorzichtig bewegen, plat neerleggen, isoleren van de ondergrond en toedekken. Niet wrijven.</p>
+          </div>
+        </div>
+        <div class="aid">
+          <div class="top" style="background:var(--orange)">Bevriezing</div>
+          <div class="body">
+            <div class="h">Signalen</div><p>Witte of grauwe, gevoelloze huid op vingers, tenen, neus of oren.</p>
+            <div class="h">Doen</div><p>Geleidelijk opwarmen met lichaamswarmte. Niet wrijven en niet tegen een kachel houden. Blaren of blijvend gevoelloos? Arts.</p>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-ghost seasonToggle" data-other="1"></button>
+      <div id="ehboHitte">
+        <div class="subhead">Hitte</div>
+        <div class="aid">
+          <div class="top" style="background:var(--yellow)">Hittekramp / oedeem</div>
+          <div class="body">
+            <div class="h">Signalen</div><p>Spierkrampen, opgezette handen of voeten, veel zweten.</p>
+            <div class="h">Doen</div><p>Rust in de schaduw, water met iets zout drinken, licht rekken. Houdt het aan? Naar de bedrijfsarts of huisarts.</p>
+          </div>
+        </div>
+        <div class="aid">
+          <div class="top" style="background:var(--orange)">Hitte-uitputting</div>
+          <div class="body">
+            <div class="h">Signalen</div><p>Bleek, klam, hoofdpijn, misselijk, duizelig, zwak, snelle pols.</p>
+            <div class="h">Doen</div><p>Stop het werk. Naar een koele plek, laten liggen met de benen omhoog, koelen en laten drinken. Geen verbetering binnen 30 minuten? Huisarts of 112.</p>
+          </div>
+        </div>
+        <div class="aid">
+          <div class="top" style="background:var(--red);color:#fff">Hitteberoerte, levensbedreigend</div>
+          <div class="body">
+            <div class="h">Signalen</div><p>Verward, rode/droge of juist klamme huid, bewustzijnsdaling, stuipen.</p>
+            <div class="h">Doen</div><p><b>Direct 112 en de BHV.</b> Koel krachtig: nat maken, koelpacks in nek, oksels en liezen, en lucht toewuiven. Niet laten drinken bij verminderd bewustzijn.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TIPS -->
+    <section class="view" id="view-tips">
+      <div id="tipsKou">
+        <div class="subhead" style="margin-top:0">Kleding bij kou</div>
+        <div class="card">
+          <ul class="measures" style="--accent:#00416e">
+            <li style="--accent:#00416e">Drie lagen: droge onderlaag, isolerende tussenlaag, wind- en waterdichte buitenlaag</li>
+            <li style="--accent:#00416e">De buitenlaag is signalerend en blijft zichtbaar</li>
+            <li style="--accent:#00416e">Muts onder de helm, handschoenen die bij de taak passen, droge sokken</li>
+            <li style="--accent:#00416e">Natte kleding direct wisselen; reservehandschoenen mee</li>
+            <li style="--accent:#00416e">Koude handen verliezen kracht: fijn werk en snijdend gereedschap na een opwarmpauze</li>
+            <li style="--accent:#00416e">Sleufranden, rijplaten, ladders en opstappen eerst ijs- en sneeuwvrij</li>
+            <li style="--accent:#00416e">Na vorst en bij dooi: wand en grondkering controleren voordat iemand de sleuf in gaat</li>
+          </ul>
+        </div>
+              <div class="subhead">Warm blijven</div>
+        <div class="card">
+          <ul class="measures" style="--accent:#00416e">
+            <li style="--accent:#00416e">Pauzeer in een verwarmde ruimte: keet, schaftwagen of bedrijfsbus</li>
+            <li style="--accent:#00416e">Drink warme dranken zoals koffie, thee of soep, bij strenge kou ook tussen de schafttijden</li>
+            <li style="--accent:#00416e">Warm de handen regelmatig op; gebruik zo nodig heatpacks</li>
+            <li style="--accent:#00416e">Wissel koud werk af met werk op een warme plek</li>
+            <li style="--accent:#00416e">Scherm de werkplek af tegen wind, regen en sneeuw</li>
+            <li style="--accent:#00416e">Kleding ventilerend en niet te strak; sluit mouwen en kraag aan op handschoenen en muts</li>
+            <li style="--accent:#00416e">Leg droge kleding, handschoenen en sokken klaar in de bus of keet</li>
+            <li style="--accent:#00416e">Gevoelstemperatuur -6 °C of lager: alleen noodzakelijk buitenwerk, in overleg met de uitvoerder</li>
+          </ul>
+        </div>
+      </div>
+      <button class="btn btn-ghost seasonToggle" data-other="1"></button>
+      <div id="tipsHitteWrap" style="display:contents"><div id="tipsHitte">
+        <div class="subhead">Drinken bij hitte</div>
+        <p class="lead">Drink elke 15 tot 20 minuten een paar slokken koel water. Wacht niet tot je dorst hebt. Bij langdurig zweten ook iets zouts erbij.</p>
+        <div class="label">Check je urinekleur</div>
+        <div class="urine" id="urine"></div>
+        <p class="muted" style="margin-top:12px">Hoe donkerder, hoe meer je moet drinken. Koffie, cola en energiedrank drijven vocht juist af. Water is het beste.</p>
+      </div></div>
+    </section>
+  </main>
+
+  <nav><div class="tabbar">
+    <button class="tab on" data-view="status"><svg viewBox="0 0 24 24"><path d="M14 14.76V5a2 2 0 0 0-4 0v9.76a4 4 0 1 0 4 0z"/></svg>Status</button>
+    <button class="tab" data-view="vooruit"><svg viewBox="0 0 24 24"><path d="M3 20h18M6 20v-7M11 20V8M16 20v-4M21 20V5"/></svg>Vooruit</button>
+    <button class="tab" data-view="timer"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg>Timer</button>
+    <button class="tab" data-view="ehbo"><svg viewBox="0 0 24 24"><path d="M12 8v8M8 12h8"/><rect x="3" y="3" width="18" height="18" rx="3"/></svg>EHBO</button>
+    <button class="tab" data-view="tips"><svg viewBox="0 0 24 24"><path d="M12 2.7S6 9 6 14a6 6 0 0 0 12 0c0-5-6-11.3-6-11.3z"/></svg>Tips</button>
+  </div></nav>
+</div>
+
+<div class="modal" id="infoModal">
+  <div class="sheet">
+    <button class="close" id="closeInfo" aria-label="Sluiten">✕</button>
+    <h2>Hoe werkt dit?</h2>
+    <p>De app bepaalt de fase voor hitte of voor kou op basis van de actuele temperatuur en de gevoelstemperatuur, met de maatregelen uit het protocol extreem weer. Bij warm weer toont de app de hittefase, bij koud weer de koufase. Onder "Vooruit" staat het uurverloop voor de rest van vandaag en een vooruitblik op morgen. Kies de locatie door een plaats te typen, "Mijn locatie" te gebruiken of de temperatuur handmatig in te voeren.</p>
+    <h3>De fasen</h3>
+    <div class="legend"><span class="dot" style="background:var(--ok)"></span>Geen verhoogd risico</div>
+    <div class="legend"><span class="dot" style="background:var(--green)"></span>Groen, alert</div>
+    <div class="legend"><span class="dot" style="background:var(--yellow)"></span>Geel, verhoogd</div>
+    <div class="legend"><span class="dot" style="background:var(--orange)"></span>Oranje, hoog</div>
+    <div class="legend"><span class="dot" style="background:var(--red)"></span>Rood, extreem</div>
+    <h3>Drempels hitte</h3>
+    <p>Schaduwtemperatuur: Groen 25 tot 27 °C, Geel 28 tot 31 °C, Oranje 32 tot 35 °C, Rood boven 35 °C. Hittekracht: 5 tot 6, 7, 8 en 9 tot 10.</p>
+    <h3>Zwaar werk</h3>
+    <p>De schakelaar Zwaar werk staat standaard aan. De app telt dan 3 °C op bij de temperatuur en rekent de hittekracht een fase hoger. Zet de schakelaar alleen uit bij licht tot matig werk buiten putten, sleuven en tenten. Bij kou heeft de schakelaar geen functie.</p>
+    <h3>Drempels kou</h3>
+    <p>Gevoelstemperatuur: Groen 5 tot 0 °C, Geel onder 0 tot en met -5 °C, Oranje -6 tot en met -14 °C, Rood -15 °C of lager. </p>
+    <h3>KNMI-waarschuwingen</h3>
+    <p>Een KNMI-code voor de gekozen locatie telt mee. Code oranje voor gladheid, sneeuw of kou geeft minimaal fase Oranje, code rood fase Rood. Bij hitte geeft code geel minimaal fase Geel en code oranje fase Oranje. Andere waarschuwingen, zoals wind, mist en onweer, toont de app als melding. Lukt het ophalen niet, dan vraagt de app om de code zelf te kiezen.</p>
+    <h3>Weerbron</h3>
+    <p>De actuele temperatuur en gevoelstemperatuur komen van het dichtstbijzijnde KNMI-meetstation via Buienradar. De waarschuwingen komen van het KNMI via MeteoAlarm. Het uurverloop en de dagverwachting komen van Open-Meteo. De locatie wordt alleen gebruikt om het juiste station te kiezen en wordt niet gedeeld.</p>
+    <h3>Advies bij kou</h3>
+    <p>Bij koud of koel weer toont de app alleen advies voor kou; het hitteadvies staat achter de knop "Toon ook hitte". Het koudeadvies volgt het protocol extreem weer en de adviezen uit de bouw- en infrabranche (FNV Bouwen en Wonen, Cumela, AWVN, VBNE en Stigas): pauzes in een verwarmde ruimte, warme dranken, kleding in lagen, droge reservekleding, afschermen, afwisselen en buitenwerk beperken vanaf een gevoelstemperatuur van -6 °C.</p>
+    <h3>Belangrijk</h3>
+    <p>De app is een hulpmiddel bij het protocol extreem weer: hitte en kou. De uitvoerder of voorman bepaalt formeel de fase. De drempels zijn actiedrempels van Hanab, geen wettelijke grenswaarden. Bij twijfel geldt de zwaardere fase. Een noodgeval bel je via 112.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+
+  var HEAT = [
+    { tag:"Onder de drempel", name:"Geen verhoogd risico", dark:false, color:"var(--ok)", accent:"#6f8ea6",
+      msg:"Werk normaal door. Drink op tijd en let op de zon.",
+      work:"Normaal tempo", drink:"Drink elke 20 tot 30 min",
+      measures:["Drink regelmatig water","Gebruik zonnebrand en bedek je hoofd","Zoek schaduw tijdens de pauze"] },
+    { tag:"Hitte · fase Groen", name:"Alert", dark:false, color:"var(--green)", accent:"#64b42d",
+      msg:"Wees alert. Drink extra en bescherm je tegen de zon.",
+      work:"Normaal, met extra drinkmomenten", drink:"Drink elke 20 min",
+      measures:["Bespreek hitte in de Dagstart en de LMRA","Extra drinkmomenten; water op de werkplek","Bedekkende kleding, pet of nekflap, zonnebrand","Pauzeer in de schaduw"] },
+    { tag:"Hitte · fase Geel", name:"Verhoogd", dark:true, color:"var(--yellow)", accent:"#f5be00",
+      msg:"Tropenrooster aan. Zwaar werk naar de ochtend, extra pauzes.",
+      work:"45 min werk / 15 min rust", drink:"Drink elke 20 min",
+      measures:["Plan zwaar werk in de ochtend","Extra pauzes in de schaduw of koelte","Let op symptomen; ontzie kwetsbare collega’s","Regel schaduw of koeling op de werkplek"] },
+    { tag:"Hitte · fase Oranje", name:"Hoog", dark:true, color:"var(--orange)", accent:"#f08c1e",
+      msg:"Tropenrooster verplicht. Zwaar werk stil in het heetst van de dag.",
+      work:"30 min werk / 30 min rust", drink:"Drink elke 15 min",
+      measures:["Geen zwaar werk tussen 12.00 en 16.00 uur","Alleen lichte of onmisbare taken in de middag","Werk in tweetallen en let op elkaar","Koelvesten of koeling; mijd cabines zonder airco"] },
+    { tag:"Hitte · fase Rood", name:"Extreem", dark:false, color:"var(--red)", accent:"#e63223",
+      msg:"Zwaar buitenwerk stilleggen. Alleen onmisbaar werk, per locatie beoordeeld.",
+      work:"Zwaar werk gestaakt", drink:"Drink elke 10 tot 15 min",
+      measures:["Leg zwaar fysiek buitenwerk stil","Alleen onmisbaar werk dat veilig kan, in korte blokken","Beoordeel per locatie met uitvoerder en HSE; leg het besluit vast","Verschuif werk naar koelere dagen of uren"] }
+  ];
+
+  var COLD = [
+    null,
+    { tag:"Kou · fase Groen", name:"Alert", dark:false, color:"var(--green)", accent:"#64b42d",
+      msg:"Wees alert. Kleed je in lagen en let op gladheid.",
+      work:"Normaal, warme schaftruimte", drink:"Warme drank in de pauze",
+      measures:["Bespreek kou in de Dagstart en de LMRA","Winterkleding in lagen; droge reservekleding, handschoenen en sokken mee","Pauzeer in een verwarmde keet of bus, met warme dranken","Controleer looproutes en ladders op gladheid"] },
+    { tag:"Kou · fase Geel", name:"Verhoogd", dark:true, color:"var(--yellow)", accent:"#f5be00",
+      msg:"Scherm de werkplek af en neem extra opwarmpauzes.",
+      work:"Extra opwarmpauzes", drink:"Warme drank, ook tussendoor",
+      measures:["Scherm de werkplek af tegen wind en neerslag","Extra opwarmpauzes in een verwarmde ruimte, met warme dranken","Wissel koud werk af met werk op een warme plek; beperk stilstaand werk","Strooien en sneeuwvrij maken","Werk in tweetallen op afgelegen plekken"] },
+    { tag:"Kou · fase Oranje", name:"Hoog", dark:true, color:"var(--orange)", accent:"#f08c1e",
+      msg:"Alleen noodzakelijk buitenwerk, in korte blokken met opwarmen ertussen.",
+      work:"Korte blokken, opwarmen ertussen", drink:"Opwarmen in keet of bus",
+      measures:["Alleen noodzakelijk buitenwerk","Korte werkblokken met opwarmen ertussen; warme dranken ook tussen de schafttijden","Verkort de werktijd buiten waar dat kan","Uitvoerder en HSE beoordelen per locatie wat doorgaat en leggen dat vast","Geen werk op hoogte of op gladde randen zonder aanvullende maatregelen"] },
+    { tag:"Kou · fase Rood", name:"Extreem", dark:false, color:"var(--red)", accent:"#e63223",
+      msg:"Buitenwerk stilleggen. Alleen onmisbaar werk, met strikte beheersing.",
+      work:"Buitenwerk gestaakt", drink:"Blijf warm en droog",
+      measures:["Leg het buitenwerk stil","Alleen onmisbaar werk, zoals storingen en het veilig achterlaten van de werkplek","Leg het besluit vast","Beperk reizen volgens het advies van het KNMI"] }
+  ];
+
+  var NEUTRAL_COOL = { tag:"Onder de drempel", name:"Geen verhoogd risico", dark:false, color:"var(--ok)", accent:"#6f8ea6",
+      msg:"Werk normaal door. Kleed je op het weer.", work:"Normaal tempo", drink:"Droge kleding bij de hand",
+      measures:["Kleed je op het weer en op de wind","Wissel natte kleding; neem droge handschoenen mee","Pauzeer droog en uit de wind","Let op gladde plekken, vooral in de ochtend"] };
+  var WARM_FROM = 18; // vanaf deze temperatuur gaat het neutrale advies over zon en drinken
+  var ADVICE_HEAT = [
+    "Rustige dag verwacht. Normale aandacht voor drinken en zon.",
+    "Wees alert: extra drinken en zonbescherming.",
+    "Tropenrooster waarschijnlijk nodig. Plan zwaar werk in de ochtend.",
+    "Warme dag. Vermijd zwaar werk in de middag; start vroeg.",
+    "Extreme hitte verwacht. Verschuif zwaar werk of begin heel vroeg."
+  ];
+  var ADVICE_COLD = [
+    "",
+    "Koude dag. Kleding in lagen en letten op gladheid.",
+    "Vorst op gevoel. Regel windschermen en een verwarmde schaftruimte.",
+    "Strenge kou. Plan alleen noodzakelijk buitenwerk en stem af met HSE.",
+    "Extreme kou verwacht. Buitenwerk verschuiven."
+  ];
+
+  function heatFromTemp(t){
+    if(t < 25) return 0;
+    if(t < 28) return 1;
+    if(t < 32) return 2;
+    if(t <= 35) return 3;
+    return 4;
+  }
+  function heatFromHK(hk){
+    if(hk <= 4) return 0;
+    if(hk <= 6) return 1;
+    if(hk === 7) return 2;
+    if(hk === 8) return 3;
+    return 4;
+  }
+  // kou: op de afgeronde gevoelstemperatuur
+  function coldFromFeel(f){
+    var r = Math.round(f);
+    if(r > 5) return 0;
+    if(r >= 0) return 1;
+    if(r >= -5) return 2;
+    if(r >= -14) return 3;
+    return 4;
+  }
+  // gecombineerd: geeft {mode, idx, p}
+  // Zwaar werk verhoogt de hittebelasting: dezelfde temperatuur telt 3 graden zwaarder, de hittekracht een fase hoger
+  var HEAVY_OFFSET = 3;
+  function heatT(t){ return heatFromTemp(state.heavy ? t + HEAVY_OFFSET : t); }
+  function heavyHK(idx){ return state.heavy ? Math.min(4, idx + 1) : idx; }
+  function assess(temp, feel){
+    var h = heatT(Math.max(temp, feel));
+    if(h > 0) return { mode:"hitte", idx:h, p:HEAT[h] };
+    var c = coldFromFeel(Math.min(temp, feel));
+    if(c > 0) return { mode:"kou", idx:c, p:COLD[c] };
+    return { mode:"geen", idx:0, p:HEAT[0] };
+  }
+
+  // ---- KNMI-waarschuwingen ----
+  // De waarschuwingen komen van MeteoAlarm, het officiele Europese kanaal waarin het KNMI zijn codes publiceert.
+  // Die bron staat geen verzoeken vanuit een browser toe. Vul hier daarom het adres in van een doorgeefpunt
+  // (bijvoorbeeld een json-bestand dat een geplande flow elk uur ververst, of een proxy van IT) dat dezelfde
+  // gegevens levert. Zonder doorgeefpunt probeert de app de bron rechtstreeks en valt anders terug op handmatig.
+  var WARN_RELAY = "warnings.json"; // staat naast de app en wordt elk kwartier ververst door een geplande taak
+  var WARN_MAX_AGE = 6*3600*1000; // ouder dan 6 uur telt als niet beschikbaar
+  var WARN_DIRECT = "https://feeds.meteoalarm.org/api/v1/warnings/feeds-netherlands";
+  var WTYPE = { 1:"Wind", 2:"Sneeuw en gladheid", 3:"Onweer", 4:"Mist", 5:"Hitte", 6:"Extreme kou", 7:"Kust", 8:"Natuurbrand", 10:"Regen", 12:"Wateroverlast", 13:"Regen en wateroverlast" };
+  var WCOL = ["", "var(--yellow)", "var(--orange)", "var(--red)"], WNAME = ["", "geel", "oranje", "rood"];
+  function inPoly(lat, lon, str){
+    var pts = String(str).trim().split(/\s+/).map(function(s){ var a=s.split(","); return [parseFloat(a[0]), parseFloat(a[1])]; });
+    var inside=false;
+    for(var i=0,j=pts.length-1;i<pts.length;j=i++){
+      var yi=pts[i][0], xi=pts[i][1], yj=pts[j][0], xj=pts[j][1];
+      if(((yi>lat)!==(yj>lat)) && (lon < (xj-xi)*(lat-yi)/(yj-yi)+xi)) inside=!inside;
+    }
+    return inside;
+  }
+  // geeft de zwaarste geldende waarschuwing voor kou, voor hitte en voor de rest
+  function parseWarnings(j, lat, lon){
+    var now=Date.now(), horizon=now+12*3600*1000, out=[];
+    (j.warnings||[]).forEach(function(w){
+      var infos=(w.alert&&w.alert.info)||[];
+      var info=null; infos.forEach(function(i){ if(i.language==="nl-NL") info=i; }); if(!info) info=infos[0];
+      if(!info) return;
+      var on=Date.parse(info.onset||info.effective||""), ex=Date.parse(info.expires||"");
+      if(isNaN(ex)||ex<now) return; if(!isNaN(on)&&on>horizon) return;
+      var par={}; (info.parameter||[]).forEach(function(p){ par[p.valueName]=p.value; });
+      var lvl=parseInt(par.awareness_level,10)-1, typ=parseInt(par.awareness_type,10);
+      if(!(lvl>=1)) return;
+      var hit=false; (info.area||[]).forEach(function(a){ (a.polygon||[]).forEach(function(p){ if(inPoly(lat,lon,p)) hit=true; }); });
+      if(!hit) return;
+      out.push({ level:Math.min(lvl,3), type:(typ===2||typ===6)?"kou":(typ===5?"hitte":"anders"), label:WTYPE[typ]||info.event||"Weer",
+                 text:info.headline||info.event||"", from:on, to:ex });
+    });
+    out.sort(function(a,b){ return b.level-a.level; });
+    return out;
+  }
+  function hhmm(ms){ var d=new Date(ms); return d.toLocaleDateString("nl-NL",{weekday:"short"})+" "+("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2); }
+  function renderWarn(){
+    var list=state.warns||[], card=$("warnCard");
+    if(!list.length){ card.classList.remove("open"); return; }
+    var top=list[0];
+    $("warnDot").style.background=WCOL[top.level];
+    $("warnTitle").textContent="KNMI code "+WNAME[top.level]+": "+list.filter(function(w){return w.level===top.level;}).map(function(w){return w.label.toLowerCase();}).filter(function(v,i,a){return a.indexOf(v)===i;}).join(", ");
+    var lines=list.map(function(w){ return "Code "+WNAME[w.level]+" "+w.label.toLowerCase()+(w.to?" tot "+hhmm(w.to):"")+"."; });
+    $("warnText").textContent=lines.join(" ");
+    $("warnSrc").textContent=state.warnSource||"";
+    card.classList.add("open");
+  }
+  function warnLevel(type){ var m=0; (state.warns||[]).forEach(function(w){ if(w.type===type && w.level>m) m=w.level; }); return m; }
+  function loadWarnings(lat, lon){
+    var urls=[]; if(WARN_RELAY) urls.push(WARN_RELAY); urls.push(WARN_DIRECT);
+    function attempt(i){
+      if(i>=urls.length){ state.warnAuto=false; $("warnOk").style.display="none"; $("warnManual").style.display="block"; return; }
+      fetch(urls[i],{cache:"no-store"}).then(function(r){ if(!r.ok) throw new Error("status"); return r.json(); }).then(function(j){
+        var stamp = j.fetched ? Date.parse(j.fetched) : null;
+        if(urls[i]===WARN_RELAY && (!stamp || isNaN(stamp) || Date.now()-stamp > WARN_MAX_AGE)) throw new Error("verouderd");
+        state.warnAuto=true; $("warnManual").style.display="none";
+        state.warns=parseWarnings(j,lat,lon); state.warnSource="Bron: KNMI via MeteoAlarm, voor deze locatie." + (stamp ? " Bijgewerkt " + hhmm(stamp) + "." : "");
+        if(!state.warns.length){ $("warnOk").style.display="block"; $("warnOk").textContent="Geen KNMI-waarschuwing voor deze locatie." + (stamp ? " Gecontroleerd " + hhmm(stamp) + "." : ""); } else { $("warnOk").style.display="none"; }
+        renderWarn(); renderStatus();
+      }).catch(function(){ attempt(i+1); });
+    }
+    attempt(0);
+  }
+  var wm={ level:0, type:"kou" };
+  function applyManualWarn(){
+    $("wmType").style.display = wm.level>0 ? "flex" : "none";
+    state.warns = wm.level>0 ? [{ level:wm.level, type:wm.type, label:(wm.type==="kou"?"Gladheid, sneeuw of kou":(wm.type==="hitte"?"Hitte":"Overig weer")), text:"", from:null, to:null }] : [];
+    state.warnSource="Handmatig ingevuld door de gebruiker.";
+    renderWarn(); renderStatus();
+  }
+
+  var state = { t:30, hk:7, useHK:false, w:26, zwaar:false, heavy:true, live:null, manual:false, mmode:"hitte", place:null, warns:[], warnAuto:null, warnSource:"" };
+  function clamp(v,lo,hi){ return Math.max(lo, Math.min(hi, v)); }
+
+  function rememberPlace(p){ try{ if(p) localStorage.setItem("hh_place",JSON.stringify(p)); else localStorage.removeItem("hh_place"); }catch(e){} }
+  function recallPlace(){ try{ var s=localStorage.getItem("hh_place"); return s?JSON.parse(s):null; }catch(e){ return null; } }
+
+  function applyMode(mode, koel){
+    var kou = mode === "kou" || !!koel;
+    var season = kou ? "kou" : "hitte", changed = window._season !== season;
+    window._season = season;
+    $("hazard").className = "hazard" + (kou ? " kou" : "");
+    $("appSub").textContent = mode==="kou" ? "Kou op het werk" : (mode==="hitte" ? "Hitte op het werk" : (kou ? "Koud en nat weer op het werk" : "Hitte en kou op het werk"));
+    $("wbgtToggle").style.display = "none";
+    $("heavyCard").style.display = kou ? "none" : "";
+    if(kou) $("wbgtPanel").classList.remove("open");
+    $("startTimerBtn").textContent = kou ? "Opwarmtimer starten" : "Werk-rust timer starten";
+    $("counterTip").textContent = kou ? "warm op in elke pauze, drink iets warms" : "drink elke pauze water";
+    // volgorde in EHBO en Tips: het actuele onderwerp bovenaan
+    var e = $("view-ehbo"), t = $("view-tips");
+    if(kou){ e.insertBefore($("ehboKou"), $("ehboHitte")); t.insertBefore($("tipsKou"), $("tipsHitte")); }
+    else { e.insertBefore($("ehboHitte"), $("ehboKou")); t.insertBefore($("tipsHitte"), $("tipsKou")); }
+    paintSeason();
+    if(changed && typeof tm === "object" && tm){
+      if(!tm.running && PRESETS[tm.presetIdx].s !== season){ for(var k=0;k<PRESETS.length;k++){ if(PRESETS[k].s===season){ selectPreset(k); break; } } }
+      else renderPresets();
+    }
+    window._mode = mode;
+  }
+
+  // alleen het advies van het seizoen tonen; het andere onderwerp staat achter een knop
+  function paintSeason(){
+    var kou = window._season === "kou", all = !!window._showAll;
+    $("ehboKou").style.display = (kou || all) ? "" : "none";
+    $("ehboHitte").style.display = (!kou || all) ? "" : "none";
+    $("tipsKou").style.display = (kou || all) ? "" : "none";
+    $("tipsHitte").style.display = (!kou || all) ? "" : "none";
+    var bs = document.querySelectorAll(".seasonToggle");
+    for(var i=0;i<bs.length;i++){
+      bs[i].textContent = all ? ("Toon alleen " + (kou ? "kou" : "hitte")) : ("Toon ook " + (kou ? "hitte" : "kou"));
+      bs[i].parentNode.appendChild(bs[i]);
+    }
+  }
+  function renderStatus(){
+    var a, src;
+    if(state.live && !state.manual){
+      a = assess(state.live.temp, state.live.feel);
+      src = "Op basis van de gevoelstemperatuur (" + Math.round(state.live.feel) + " °C). Bron: " + state.live.source + ".";
+    } else if(state.manual){
+      if(state.mmode === "kou"){
+        var c = coldFromFeel(state.t);
+        a = c > 0 ? { mode:"kou", idx:c, p:COLD[c] } : { mode:"kou", idx:0, p:HEAT[0] };
+        src = "Handmatig, bepaald door de gevoelstemperatuur (" + state.t + " °C).";
+      } else {
+        var idxT = heatT(state.t);
+        var idxH = state.useHK ? heavyHK(heatFromHK(state.hk)) : -1;
+        var h = Math.max(idxT, idxH);
+        a = { mode:"hitte", idx:h, p:HEAT[h] };
+        if(state.useHK && idxH > idxT) src = "Handmatig, bepaald door de hittekracht (" + state.hk + ").";
+        else src = "Handmatig, bepaald door de temperatuur (" + state.t + " °C).";
+      }
+    } else {
+      a = { mode:"geen", idx:0, p:HEAT[0] };
+      src = "Voorlopige inschatting terwijl het weer wordt opgehaald…";
+    }
+    // KNMI-code telt mee: code oranje geeft minimaal fase Oranje, code rood fase Rood (hitte: code geel geeft Geel)
+    var wk = warnLevel("kou"), wh = warnLevel("hitte"), bump = "";
+    if(wk >= 2 && a.mode !== "hitte"){
+      var need = wk + 1;
+      if(a.mode !== "kou" || a.idx < need){ a = { mode:"kou", idx:need, p:COLD[need] }; bump = " Fase verhoogd door KNMI code " + WNAME[wk] + "."; }
+    }
+    if(wh >= 1 && a.mode !== "kou"){
+      var needH = wh + 1;
+      if(a.mode !== "hitte" || a.idx < needH){ a = { mode:"hitte", idx:needH, p:HEAT[needH] }; bump = " Fase verhoogd door KNMI code " + WNAME[wh] + "."; }
+    }
+    if(a.mode === "hitte" && state.heavy) src += " Zwaar werk meegerekend.";
+    src += bump;
+    var p = a.p;
+    var ref = (state.live && !state.manual) ? Math.max(state.live.temp, state.live.feel) : (state.manual ? state.t : WARM_FROM);
+    var cool = a.idx === 0 && (a.mode === "kou" || ref < WARM_FROM);
+    if(cool) p = NEUTRAL_COOL;
+    var banner = $("phaseBanner");
+    banner.style.background = p.color;
+    banner.className = "phase" + (p.dark ? " dark" : "");
+    $("pTag").textContent = p.tag;
+    $("pName").textContent = p.name.toUpperCase();
+    $("pMsg").textContent = p.msg;
+    $("pWork").textContent = "⏱ " + p.work;
+    $("pDrink").textContent = ((a.mode === "kou" || cool) ? "🧤 " : "💧 ") + p.drink;
+    $("pSrc").textContent = src;
+    var ul = $("measures"); ul.innerHTML = "";
+    p.measures.forEach(function(m){
+      var li = document.createElement("li");
+      li.style.setProperty("--accent", p.accent);
+      li.textContent = m;
+      ul.appendChild(li);
+    });
+    window._phaseIdx = a.idx;
+    applyMode(a.mode, cool);
+  }
+
+  // ---- weer ----
+  function setWxStatus(txt, busy){
+    var el = $("wxStatus"); el.innerHTML = "";
+    if(busy){ var sp=document.createElement("span"); sp.className="pulse"; el.appendChild(sp); }
+    el.appendChild(document.createTextNode(txt));
+  }
+  function haversine(la1,lo1,la2,lo2){
+    var R=6371, rad=Math.PI/180;
+    var dLa=(la2-la1)*rad, dLo=(lo2-lo1)*rad;
+    var a=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(la1*rad)*Math.cos(la2*rad)*Math.sin(dLo/2)*Math.sin(dLo/2);
+    return 2*R*Math.asin(Math.sqrt(a));
+  }
+  function pick(o,a,b){ return o[a]!=null ? o[a] : o[b]; }
+
+  function applyWx(temp, feel, label, source){
+    state.live = { temp:temp, feel:feel, label:label, source:source, time:new Date() };
+    state.manual = false;
+    $("manualCard").style.display = "none";
+    $("toManual").textContent = "Handmatig";
+    $("wxMain").style.display = "flex";
+    $("wxTemp").textContent = Math.round(temp);
+    $("wxFeel").textContent = Math.round(feel);
+    var t = state.live.time;
+    var hh = ("0"+t.getHours()).slice(-2), mm = ("0"+t.getMinutes()).slice(-2);
+    $("wxMeta").textContent = label + " · " + hh + ":" + mm + " · " + source;
+    setWxStatus("Actueel weer", false);
+    renderStatus();
+  }
+
+  function fetchBuienradar(lat, lon){
+    return fetch("https://data.buienradar.nl/2.0/feed/json", { cache:"no-store" })
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        var act = j.actual || j.Actual || {};
+        var arr = act.stationmeasurements || act.StationMeasurements || act.weatherstationmeasurements || act.WeatherStationMeasurements || [];
+        if(!arr.length) throw new Error("leeg");
+        var best=null, bd=1e12;
+        arr.forEach(function(s){
+          var la=pick(s,"lat","Lat"), lo=pick(s,"lon","Lon");
+          var tp=pick(s,"temperature","Temperature");
+          var fl=pick(s,"feeltemperature","Feeltemperature");
+          if(la==null||lo==null||(la===0&&lo===0)||tp==null) return;
+          var d=haversine(lat,lon,la,lo);
+          if(d<bd){ bd=d; best={ t:tp, f:(fl!=null?fl:tp), name:String(pick(s,"stationname","Stationname")||s.regio||"meetstation").replace(/^Meetstation\s*/i,"") }; }
+        });
+        if(!best) throw new Error("geen station");
+        return { temp:best.t, feel:best.f, label:"KNMI "+best.name, source:"Buienradar · KNMI-stations" };
+      });
+  }
+  function fetchOpenMeteo(lat, lon){
+    var u = "https://api.open-meteo.com/v1/forecast?latitude="+lat.toFixed(3)+"&longitude="+lon.toFixed(3)+"&current=temperature_2m,apparent_temperature&timezone=auto";
+    return fetch(u, { cache:"no-store" })
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        var c = j.current || {};
+        if(c.temperature_2m==null) throw new Error("geen data");
+        return { temp:c.temperature_2m, feel:(c.apparent_temperature!=null?c.apparent_temperature:c.temperature_2m), label:"Locatie", source:"Open-Meteo" };
+      });
+  }
+
+  function loadFor(lat, lon, placeLabel){
+    setWxStatus("Weer ophalen…", true);
+    fetchBuienradar(lat, lon).then(function(w){
+      applyWx(w.temp, w.feel, placeLabel ? placeLabel + " · " + w.label : w.label, w.source);
+    }).catch(function(){
+      fetchOpenMeteo(lat, lon).then(function(w2){
+        applyWx(w2.temp, w2.feel, placeLabel ? placeLabel : w2.label, w2.source);
+      }).catch(function(){
+        state.live = null; $("wxMain").style.display = "none";
+        setWxStatus("Weer ophalen lukt hier niet. Typ een plaats of vul handmatig in.", false);
+      });
+    });
+    loadForecast(lat, lon);
+    loadWarnings(lat, lon);
+  }
+
+  function getPosition(){
+    return new Promise(function(res,rej){
+      if(!navigator.geolocation){ rej(new Error("geen geolocatie")); return; }
+      navigator.geolocation.getCurrentPosition(
+        function(p){ res({ lat:p.coords.latitude, lon:p.coords.longitude }); },
+        function(e){ rej(e); },
+        { timeout:8000, maximumAge:300000 }
+      );
+    });
+  }
+  var DEFAULT_LOC = { lat:51.57, lon:4.77 };
+
+  function useGeo(){
+    rememberPlace(null); state.place=null;
+    setWxStatus("Locatie bepalen…", true);
+    getPosition().then(function(loc){
+      loadFor(loc.lat, loc.lon, null);
+    }, function(){
+      setWxStatus("Geen locatietoegang, standaardlocatie. Typ desnoods een plaats.", true);
+      loadFor(DEFAULT_LOC.lat, DEFAULT_LOC.lon, "West-Brabant (standaard)");
+    });
+  }
+
+  // ---- vooruitblik (uur + morgen) ----
+  function buildHours(times, temps, feels, dateStr, fromHour, toHour){
+    var out=[];
+    for(var i=0;i<times.length;i++){
+      var ts=times[i];
+      if(ts.slice(0,10)!==dateStr) continue;
+      var hr=parseInt(ts.slice(11,13),10);
+      if(hr<fromHour||hr>toHour) continue;
+      out.push({ hour:hr, temp:temps[i], feel:(feels && feels[i]!=null ? feels[i] : temps[i]) });
+    }
+    return out;
+  }
+  function renderStrip(boxId, hours, nowHour){
+    var box=$(boxId); box.innerHTML="";
+    if(!hours.length){ box.innerHTML='<div class="muted">Geen uurgegevens beschikbaar.</div>'; return; }
+    var feels=hours.map(function(h){return h.feel;});
+    var lo=Math.min.apply(null,feels), hi=Math.max.apply(null,feels);
+    if(hi-lo < 8){ var mid=(hi+lo)/2; lo=mid-4; hi=mid+4; }
+    hours.forEach(function(h){
+      var a=assess(h.temp, h.feel);
+      var pct = (h.feel-lo)/(hi-lo);
+      var barH = 18 + Math.round(clamp(pct,0,1)*82);
+      var col=document.createElement("div"); col.className="fc-col"+(nowHour===h.hour?" now":"");
+      var tt=document.createElement("div"); tt.className="fc-temp"; tt.textContent=Math.round(h.feel)+"°";
+      var bw=document.createElement("div"); bw.className="fc-barwrap";
+      var bar=document.createElement("div"); bar.className="fc-bar"; bar.style.height=barH+"px"; bar.style.background=a.p.color;
+      bw.appendChild(bar);
+      var hr=document.createElement("div"); hr.className="fc-hr"; hr.textContent=(nowHour===h.hour?"nu":("0"+h.hour).slice(-2));
+      col.appendChild(tt); col.appendChild(bw); col.appendChild(hr);
+      box.appendChild(col);
+    });
+  }
+  function fmtDay(dateStr){
+    var pa=dateStr.split("-");
+    var d=new Date(parseInt(pa[0],10), parseInt(pa[1],10)-1, parseInt(pa[2],10));
+    return d.toLocaleDateString("nl-NL",{ weekday:"short", day:"numeric", month:"short" });
+  }
+  function hh(n){ return ("0"+n).slice(-2)+":00"; }
+  function renderForecast(j){
+    var H=j.hourly||{}, D=j.daily||{};
+    if(!H.time || !D.time){ $("todaySum").textContent="Verwachting niet beschikbaar."; return; }
+    var today=D.time[0], tmr=D.time[1];
+    var nowHour=new Date().getHours();
+
+    // rest van vandaag
+    var th=buildHours(H.time,H.temperature_2m,H.apparent_temperature,today,Math.min(nowHour,21),22);
+    renderStrip("todayStrip", th, nowHour);
+    if(th.length){
+      var worst=null;
+      th.forEach(function(h){ var a=assess(h.temp,h.feel); if(!worst || a.idx>worst.a.idx) worst={h:h,a:a}; });
+      var s;
+      if(worst.a.idx===0){
+        s="Geen verhoogd risico voor de rest van de dag.";
+      } else if(worst.a.mode==="hitte"){
+        var peak=th[0]; th.forEach(function(h){ if(h.feel>peak.feel) peak=h; });
+        s="Piek "+Math.round(peak.feel)+"° rond "+hh(peak.hour)+" (hitte, "+worst.a.p.name.toLowerCase()+").";
+        var firstHot=null; th.forEach(function(h){ if(firstHot===null && heatFromTemp(Math.max(h.temp,h.feel))>=3) firstHot=h; });
+        if(firstHot) s+=" Vanaf "+hh(firstHot.hour)+" fase Oranje of hoger: plan zwaar werk eerder.";
+      } else {
+        var low=th[0]; th.forEach(function(h){ if(h.feel<low.feel) low=h; });
+        s="Koudste moment voelt als "+Math.round(low.feel)+"° rond "+hh(low.hour)+" (kou, "+worst.a.p.name.toLowerCase()+").";
+        var firstCold=null; th.forEach(function(h){ if(firstCold===null && coldFromFeel(Math.min(h.temp,h.feel))>=3) firstCold=h; });
+        if(firstCold) s+=" Vanaf "+hh(firstCold.hour)+" fase Oranje of hoger: alleen noodzakelijk buitenwerk.";
+      }
+      $("todaySum").textContent=s;
+    } else {
+      $("todaySum").textContent="De werkdag zit er bijna op. Bekijk de vooruitblik voor morgen.";
+    }
+
+    // morgen
+    if(tmr){
+      var amax = (D.apparent_temperature_max && D.apparent_temperature_max[1]!=null) ? D.apparent_temperature_max[1] : (D.temperature_2m_max?D.temperature_2m_max[1]:null);
+      var tmax = D.temperature_2m_max ? D.temperature_2m_max[1] : null;
+      var tmin = D.temperature_2m_min ? D.temperature_2m_min[1] : null;
+      var mh=buildHours(H.time,H.temperature_2m,H.apparent_temperature,tmr,6,21);
+      // kou op de werkuren van morgen (06 tot 21 uur), niet op de nacht
+      var wmin=null; mh.forEach(function(h){ if(wmin===null || h.feel<wmin) wmin=h.feel; });
+      var hIdx = heatT(amax!=null?amax:0);
+      var cIdx = wmin!=null ? coldFromFeel(wmin) : 0;
+      var kou = hIdx===0 && cIdx>0;
+      var p = kou ? COLD[cIdx] : HEAT[hIdx];
+      var b=$("tmrBanner"); b.style.background=p.color; b.className="phase"+(p.dark?" dark":"");
+      $("tmrTag").textContent="Morgen · "+fmtDay(tmr)+(kou?" · kou":(hIdx>0?" · hitte":""));
+      $("tmrName").textContent=p.name.toUpperCase();
+      $("tmrMsg").textContent=kou ? ADVICE_COLD[cIdx] : ((hIdx===0 && (amax==null || amax<WARM_FROM)) ? "Rustige dag verwacht. Geen bijzondere maatregelen voor hitte of kou." : ADVICE_HEAT[hIdx]);
+      $("tmrMax").textContent=kou ? "koudst voelt als "+Math.round(wmin)+"° (werkuren)" : "max voelt als "+(amax!=null?Math.round(amax):"–")+"°";
+      $("tmrMin").textContent="laag "+(tmin!=null?Math.round(tmin):"–")+"° · hoog "+(tmax!=null?Math.round(tmax):"–")+"°";
+      renderStrip("tmrStrip", mh, -1);
+    }
+  }
+  function loadForecast(lat, lon){
+    $("todaySum").textContent="Verloop laden…";
+    var u="https://api.open-meteo.com/v1/forecast?latitude="+lat.toFixed(3)+"&longitude="+lon.toFixed(3)
+      +"&hourly=temperature_2m,apparent_temperature&daily=apparent_temperature_max,apparent_temperature_min,temperature_2m_max,temperature_2m_min,weather_code"
+      +"&forecast_days=2&timezone=auto";
+    fetch(u,{cache:"no-store"}).then(function(r){return r.json();}).then(function(j){
+      state.fc = j; renderForecast(j);
+    }).catch(function(){
+      $("todaySum").textContent="Verwachting kon hier niet worden opgehaald (werkt buiten de preview, op een gehoste versie).";
+      $("todayStrip").innerHTML=""; $("tmrStrip").innerHTML="";
+    });
+  }
+
+  // ---- plaatszoeker ----
+  function geocode(name){
+    var u = "https://geocoding-api.open-meteo.com/v1/search?name="+encodeURIComponent(name)+"&count=8&language=nl&format=json";
+    return fetch(u).then(function(r){ return r.json(); }).then(function(j){
+      var res = j.results || [];
+      if(!res.length) throw new Error("leeg");
+      res.sort(function(a,b){ return (a.country_code==="NL"?0:1)-(b.country_code==="NL"?0:1); });
+      return res;
+    });
+  }
+  function renderSuggestions(list){
+    var box = $("placeSug"); box.innerHTML = "";
+    list.slice(0,6).forEach(function(r){
+      var b = document.createElement("button"); b.className="sug";
+      var extra = (r.admin1 ? " · "+r.admin1 : "") + (r.country_code && r.country_code!=="NL" ? " · "+r.country_code : "");
+      b.textContent = r.name + extra;
+      b.addEventListener("click", function(){ choosePlace(r); });
+      box.appendChild(b);
+    });
+    box.style.display = "flex";
+  }
+  function clearSuggestions(){ var box=$("placeSug"); box.innerHTML=""; box.style.display="none"; }
+  function choosePlace(r){
+    clearSuggestions();
+    var label = r.name + (r.admin1 ? " ("+r.admin1+")" : "");
+    state.place = { lat:r.latitude, lon:r.longitude, label:label };
+    rememberPlace(state.place);
+    $("placeInput").value = ""; $("placeInput").blur();
+    loadFor(r.latitude, r.longitude, label);
+  }
+  function searchPlace(name){
+    if(!name || !name.trim()) return;
+    var num = name.trim().replace(",", ".").replace(/\s*(°|graden|c)+\s*$/i, "");
+    if(/^[-+]?\d+(\.\d+)?$/.test(num)){
+      var v = clamp(Math.round(parseFloat(num)), -30, 50);
+      $("placeInput").value = ""; $("placeInput").blur(); clearSuggestions();
+      state.manual = true; state.t = v;
+      $("manualCard").style.display = "block";
+      $("toManual").textContent = state.live ? "Gebruik weer" : "Handmatig";
+      setWxStatus("Handmatig ingevuld: " + v + " °C. Een plaats zoek je op naam.", false);
+      setManualMode(v <= 10 ? "kou" : "hitte");
+      return;
+    }
+    clearSuggestions();
+    setWxStatus("Plaats zoeken…", true);
+    geocode(name.trim()).then(function(list){
+      if(list.length === 1){ choosePlace(list[0]); }
+      else { renderSuggestions(list); setWxStatus("Kies de juiste plaats:", false); }
+    }).catch(function(){
+      setWxStatus("Plaats niet gevonden. Probeer een andere spelling.", false);
+    });
+  }
+  $("placeGo").addEventListener("click", function(){ searchPlace($("placeInput").value); });
+  $("placeInput").addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); searchPlace(this.value); } });
+  $("useGeoBtn").addEventListener("click", useGeo);
+
+  // ---- KNMI-code handmatig ----
+  document.querySelectorAll("#wmLevel button").forEach(function(b){ b.addEventListener("click", function(){
+    wm.level=parseInt(b.dataset.l,10);
+    document.querySelectorAll("#wmLevel button").forEach(function(x){ x.className = x===b ? "on" : ""; });
+    applyManualWarn();
+  }); });
+  document.querySelectorAll("#wmType button").forEach(function(b){ b.addEventListener("click", function(){
+    wm.type=b.dataset.t;
+    document.querySelectorAll("#wmType button").forEach(function(x){ x.className = x===b ? "on" : ""; });
+    applyManualWarn();
+  }); });
+
+  // ---- handmatig ----
+  function setManualMode(m){
+    state.mmode = m;
+    $("segHitte").className = m==="hitte" ? "on" : "";
+    $("segKou").className = m==="kou" ? "on" : "";
+    $("tLabel").textContent = m==="kou" ? "Gevoelstemperatuur" : "Temperatuur in de schaduw";
+    $("hkBlock").style.display = m==="kou" ? "none" : "block";
+    if(m==="kou" && state.t > 10) state.t = 0;
+    if(m==="hitte" && state.t <= 10) state.t = 30;
+    $("tVal").textContent = state.t;
+    renderStatus();
+  }
+  $("segHitte").addEventListener("click", function(){ setManualMode("hitte"); });
+  $("segKou").addEventListener("click", function(){ setManualMode("kou"); });
+
+  function showManual(on){
+    state.manual = on;
+    $("manualCard").style.display = on ? "block" : "none";
+    $("toManual").textContent = (on && state.live) ? "Gebruik weer" : "Handmatig";
+    if(on){
+      // start in de modus die bij het actuele weer past
+      var m = (state.live && Math.min(state.live.temp, state.live.feel) <= 10) ? "kou" : "hitte";
+      if(state.live) state.t = Math.round(m==="kou" ? state.live.feel : state.live.temp);
+      setManualMode(m);
+    } else if(!state.live){
+      if(state.place) loadFor(state.place.lat, state.place.lon, state.place.label);
+      else useGeo();
+    } else renderStatus();
+  }
+  $("toManual").addEventListener("click", function(){ showManual(!state.manual); });
+
+  // ---- steppers ----
+  function bindStep(minusId, plusId, get, set, render){
+    $(minusId).addEventListener("click", function(){ set(get()-1); render(); });
+    $(plusId).addEventListener("click", function(){ set(get()+1); render(); });
+  }
+  bindStep("tMinus","tPlus", function(){return state.t;}, function(v){ state.t=clamp(v,-30,50); $("tVal").textContent=state.t; }, renderStatus);
+  bindStep("hMinus","hPlus", function(){return state.hk;}, function(v){ state.hk=clamp(v,0,10); $("hVal").textContent=state.hk; }, renderStatus);
+  $("hkToggle").addEventListener("change", function(e){
+    state.useHK = e.target.checked;
+    var st = $("hkStepper");
+    st.style.opacity = state.useHK ? "1" : ".4";
+    st.style.pointerEvents = state.useHK ? "auto" : "none";
+    renderStatus();
+  });
+
+  // ---- WBGT ----
+  function wbgtRegime(w, zwaar){
+    var base = zwaar ? 26 : 28;
+    if(w < base)   return { txt:"Normaal werktempo · drink elke 20 min", lvl:0 };
+    if(w < base+1) return { txt:"45 min werk / 15 min rust · drink elke 20 min", lvl:1 };
+    if(w < base+2) return { txt:"30 min werk / 30 min rust · drink elke 15 min", lvl:2 };
+    if(w < base+3) return { txt:"15 min werk / 45 min rust · drink elke 15 min", lvl:3 };
+    return { txt:"Staken, alleen onmisbaar werk · drink elke 10 tot 15 min", lvl:4 };
+  }
+  var LVL_COLORS = ["var(--ok)","var(--green)","var(--yellow)","var(--orange)","var(--red)"];
+  var LVL_DARK = [false,false,true,true,false];
+  function renderWbgt(){
+    var r = wbgtRegime(state.w, state.zwaar);
+    var out = $("wbgtOut");
+    out.style.background = LVL_COLORS[r.lvl];
+    out.style.color = LVL_DARK[r.lvl] ? "#00416e" : "#fff";
+    out.textContent = r.txt;
+    $("segMatig").className = state.zwaar ? "" : "on";
+    $("segZwaar").className = state.zwaar ? "on" : "";
+  }
+  bindStep("wMinus","wPlus", function(){return state.w;}, function(v){ state.w=clamp(v,15,40); $("wVal").textContent=state.w; }, renderWbgt);
+  $("wbgtToggle").addEventListener("click", function(){
+    var panel = $("wbgtPanel");
+    panel.classList.toggle("open");
+    this.textContent = panel.classList.contains("open") ? "WBGT-paneel verbergen" : "Zwaar werk? Bepaal via WBGT";
+    if(panel.classList.contains("open")) renderWbgt();
+  });
+  $("segMatig").addEventListener("click", function(){ state.zwaar=false; renderWbgt(); });
+  $("segZwaar").addEventListener("click", function(){ state.zwaar=true; renderWbgt(); });
+
+  // ---- tabs ----
+  var tabs = document.querySelectorAll(".tab");
+  function showView(name){
+    document.querySelectorAll(".view").forEach(function(v){ v.classList.remove("active"); });
+    $("view-"+name).classList.add("active");
+    tabs.forEach(function(t){ t.classList.toggle("on", t.dataset.view===name); });
+    document.querySelector("main").scrollTop = 0;
+  }
+  tabs.forEach(function(t){ t.addEventListener("click", function(){ showView(t.dataset.view); }); });
+
+  // ---- timer ----
+  var PRESETS = [
+    { label:"45 / 15 (hitte Geel)", work:45, rest:15, tip:"drink water", s:"hitte" },
+    { label:"30 / 30 (hitte Oranje)", work:30, rest:30, tip:"drink water", s:"hitte" },
+    { label:"15 / 45 (hitte Rood)", work:15, rest:45, tip:"drink water", s:"hitte" },
+    { label:"Drinkherinnering 20 min", work:20, rest:0, tip:"drink water", s:"hitte" },
+    { label:"45 / 15 opwarmen (kou Geel)", work:45, rest:15, tip:"warm op, drink iets warms", s:"kou" },
+    { label:"30 / 15 opwarmen (kou Oranje)", work:30, rest:15, tip:"warm op, drink iets warms", s:"kou" }
+  ];
+  var tm = { presetIdx:0, phase:"work", remaining:PRESETS[0].work*60, running:false, intv:null, rounds:0 };
+  function fmt(s){ var m=Math.floor(s/60), ss=s%60; return (m<10?"0":"")+m+":"+(ss<10?"0":"")+ss; }
+  function renderPresets(){
+    var box = $("presets"); box.innerHTML = "";
+    PRESETS.forEach(function(p,i){
+      if(!window._showAll && p.s !== (window._season || "hitte")) return;
+      var b = document.createElement("button");
+      b.className = "preset" + (i===tm.presetIdx ? " on":"");
+      b.textContent = p.label;
+      b.addEventListener("click", function(){ selectPreset(i); });
+      box.appendChild(b);
+    });
+  }
+  function selectPreset(i){ tm.presetIdx=i; tm.phase="work"; tm.remaining=PRESETS[i].work*60; stopTimer(); paintTimer(); renderPresets(); }
+  function paintTimer(){
+    var p = PRESETS[tm.presetIdx];
+    $("timerBig").textContent = fmt(tm.remaining);
+    var ring = $("timerRing"); ring.classList.remove("work","rest");
+    if(p.rest===0){ $("timerState").textContent = tm.running?"Werken":"Klaar"; $("timerSub").textContent="Drink water bij elke melding"; ring.classList.add("work"); }
+    else if(tm.phase==="work"){ $("timerState").textContent = tm.running?"Werken":"Klaar"; $("timerSub").textContent="Werkblok: "+p.work+" min"; ring.classList.add("work"); }
+    else { $("timerState").textContent="Pauze: "+p.tip; $("timerSub").textContent="Rust: "+p.rest+" min"; ring.classList.add("rest"); }
+    $("roundCount").textContent = tm.rounds;
+  }
+  var audioCtx=null;
+  function beep(n){
+    try{
+      audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+      var t = audioCtx.currentTime;
+      for(var i=0;i<(n||2);i++){
+        var o=audioCtx.createOscillator(), g=audioCtx.createGain();
+        o.type="square"; o.frequency.value=880; o.connect(g); g.connect(audioCtx.destination);
+        var s=t+i*0.28;
+        g.gain.setValueAtTime(0.0001,s);
+        g.gain.exponentialRampToValueAtTime(0.25,s+0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001,s+0.22);
+        o.start(s); o.stop(s+0.24);
+      }
+    }catch(e){}
+  }
+  function alertSwitch(){
+    beep(tm.phase==="rest"?3:2);
+    if(navigator.vibrate) navigator.vibrate(tm.phase==="rest"?[250,120,250]:[200]);
+    var ring=$("timerRing"); ring.classList.add("flash");
+    setTimeout(function(){ ring.classList.remove("flash"); },650);
+  }
+  function tick(){
+    tm.remaining--;
+    if(tm.remaining<=0){
+      var p=PRESETS[tm.presetIdx];
+      if(p.rest===0){ tm.rounds++; tm.remaining=p.work*60; alertSwitch(); }
+      else if(tm.phase==="work"){ tm.phase="rest"; tm.remaining=p.rest*60; alertSwitch(); }
+      else { tm.phase="work"; tm.remaining=p.work*60; tm.rounds++; alertSwitch(); }
+    }
+    paintTimer();
+  }
+  function startTimer(){ if(tm.running){ stopTimer(); return; } tm.running=true; $("startBtn").textContent="Pauzeer"; beep(1); tm.intv=setInterval(tick,1000); paintTimer(); }
+  function stopTimer(){ tm.running=false; $("startBtn").textContent="Start"; if(tm.intv){ clearInterval(tm.intv); tm.intv=null; } }
+  function resetTimer(){ stopTimer(); tm.phase="work"; tm.remaining=PRESETS[tm.presetIdx].work*60; tm.rounds=0; paintTimer(); }
+  $("startBtn").addEventListener("click", startTimer);
+  $("resetBtn").addEventListener("click", resetTimer);
+  $("startTimerBtn").addEventListener("click", function(){
+    var idx = window._phaseIdx || 0;
+    if(window._season === "kou"){ selectPreset(idx >= 3 ? 5 : 4); }
+    else { var map = {2:0, 3:1, 4:2}; selectPreset(idx in map ? map[idx] : 3); }
+    showView("timer");
+  });
+
+  // ---- urine ----
+  var URINE = [
+    ["#faf7c9","Goed gehydrateerd, zo houden."],
+    ["#f3ec9a","Prima, blijf drinken."],
+    ["#e9dc6b","Strogeel: drink wat vaker."],
+    ["#d9c247","Donkergeel: je raakt uitgedroogd, drink meer."],
+    ["#c2a030","Amber: uitgedroogd, drink nu en blijf drinken."],
+    ["#9c7320","Donker amber: ernstig uitgedroogd, direct drinken."],
+    ["#78510f","Bruinig: stop, drink en meld het bij je voorman."]
+  ];
+  (function(){
+    var box=$("urine");
+    URINE.forEach(function(u){
+      var row=document.createElement("div"); row.className="urow";
+      var sw=document.createElement("div"); sw.className="uswatch"; sw.style.background=u[0];
+      var tx=document.createElement("div"); tx.className="utext"; tx.textContent=u[1];
+      row.appendChild(sw); row.appendChild(tx); box.appendChild(row);
+    });
+  })();
+
+  // ---- modal ----
+  $("infoBtn").addEventListener("click", function(){ $("infoModal").classList.add("open"); });
+  $("closeInfo").addEventListener("click", function(){ $("infoModal").classList.remove("open"); });
+  $("infoModal").addEventListener("click", function(e){ if(e.target===this) this.classList.remove("open"); });
+
+  // ---- init ----
+  renderStatus();
+  renderPresets();
+  $("heavySwitch").addEventListener("change", function(e){
+    state.heavy = e.target.checked;
+    $("heavyHint").textContent = state.heavy ? "Staat aan: de app rekent met zwaar werk. De hittefasen tellen zwaarder en slaan eerder om naar geel, oranje en rood." : "Staat uit: de app rekent met licht tot matig werk. Zet de schakelaar aan bij zwaar werk.";
+    renderStatus(); if(state.fc) renderForecast(state.fc);
+  });
+  (function(){ var bs=document.querySelectorAll(".seasonToggle"); for(var i=0;i<bs.length;i++){ bs[i].addEventListener("click", function(){ window._showAll=!window._showAll; paintSeason(); renderPresets(); }); } })();
+  paintTimer();
+  var saved = recallPlace();
+  if(saved && saved.lat!=null){ state.place=saved; loadFor(saved.lat, saved.lon, saved.label); }
+  else { useGeo(); }
+})();
+</script>
+</body>
+</html>
